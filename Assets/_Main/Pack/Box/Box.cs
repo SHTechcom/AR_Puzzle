@@ -1,30 +1,43 @@
-using DG.Tweening;
+using System;
 using UnityEngine;
 
 public class Box : MonoBehaviour
 {
     public bool isFlipping;
+    public int targetAngle;
+    private Action callback;
+    public int id;
 
-    private void Update()
+    public void Init(int angle)
     {
-        if(Input.GetMouseButtonDown(0))
-        {
-            OnClick();
-        }
+        if (angle >= 360) angle = 0;
+        targetAngle = angle;
+        transform.localRotation = Quaternion.Euler(angle, 0, 0);
     }
 
-    public void OnClick()
-    {
-        OnFlip();
-    }
-
-    public void OnFlip()
+    public void OnFlip(Action callback)
     {
         if (isFlipping) return;
         isFlipping = true;
-        transform.DOLocalRotate(new Vector3(90, 0, 0), 0.5f, RotateMode.LocalAxisAdd).OnComplete(() =>
+        this.callback = callback;
+        targetAngle += 90;
+    }
+
+    private void FixedUpdate()
+    {
+        if (isFlipping)
         {
-            isFlipping = false;
-        });
+            transform.localRotation = Quaternion.RotateTowards(transform.localRotation, Quaternion.Euler(targetAngle, 0, 0), 10f);
+            if(transform.localRotation == Quaternion.Euler(targetAngle, 0, 0))
+            {
+                transform.localRotation = Quaternion.Euler(targetAngle, 0, 0);
+                if(targetAngle >= 360)
+                {
+                    targetAngle = 0;
+                }
+                callback?.Invoke();
+                isFlipping = false;
+            }
+        }
     }
 }
